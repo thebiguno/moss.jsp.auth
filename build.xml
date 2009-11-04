@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE project [
+<!ENTITY baseBuild SYSTEM "../ca.digitalcave.build/build.xml.inc">
+]>
+<project name="JSP Auth" default="jar" basedir=".">
+
+	<!-- Version number and other build-specific properties -->
+	<property file="etc/build.properties"/>
+
+	<!-- Set up all the project specific properties -->
+	<property name="PROJECT_NAME" value="JSP Auth"/>
+	<property name="PROJECT_SHORT_NAME" value="moss-jsp-auth"/>
+	<property name="PROJECT_DESCRIPTION" value="JSP Filter to facilitate authentication on a per-URI level."/>
+	<property name="PROJECT_COPYRIGHT" value="Copyright Wyatt Olson"/>
+
+    <path id="classpath">
+        <fileset dir="lib" includes="**/*.jar"/>
+    	<fileset dir="WebContent/WEB-INF/lib" includes="**/*.jar"/>
+    </path>
+	
+	&baseBuild;
+
+</project>

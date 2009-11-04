@@ -1,0 +1,2 @@
+1.0.0.0 - November 4 2009
+-Initial stable version.  Basic auth is implemented, there are hooks for Digest but it is not working yet.  

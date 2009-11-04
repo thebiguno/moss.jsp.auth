@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<auth log-level="FINEST" type="basic" realm="DC Photos">
+  <auth-mapping pattern=".*jsp">
+    <element class="string">users</element>
+  </auth-mapping>
+  <group name="users"/>
+  <group name="admin"/>
+  <user name="wyatt" password="foobar">
+    <group>admin</group>
+  </user>
+  <user name="scott" password="tiger">
+    <group>users</group>
+  </user>
+</auth>
