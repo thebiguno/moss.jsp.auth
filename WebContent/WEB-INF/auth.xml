@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <auth log-level="FINEST" type="basic" realm="DC Photos">
-  <auth-mapping pattern=".*jsp">
-    <element class="string">users</element>
-  </auth-mapping>
+  <auth-mapping pattern=".*jsp"></auth-mapping>
+  <auth-mapping pattern=".*index\.jsp"><group>admin</group></auth-mapping>
+  
   <group name="users"/>
   <group name="admin"/>
+  
   <user name="wyatt" password="foobar">
     <group>admin</group>
   </user>

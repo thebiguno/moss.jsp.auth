@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
@@ -21,7 +22,9 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 @XStreamAlias("auth")
 public class Config {
 
-	private transient Map<Pattern, AuthMapping> authMappingsByPattern;
+	private final static Logger logger = Logger.getLogger(Config.class.getName());
+	
+	private transient Map<Pattern, AuthMapping> authMappingsByPattern = null;
 
 	@XStreamImplicit
 	private List<AuthMapping> authMappings = new ArrayList<AuthMapping>();
@@ -61,6 +64,8 @@ public class Config {
 	}
 	
 	public List<AuthGroup> getGroups() {
+		if (groups == null)
+			return new ArrayList<AuthGroup>();
 		return groups;
 	}
 	public void setGroups(List<AuthGroup> groups) {
@@ -68,12 +73,16 @@ public class Config {
 	}
 
 	public List<AuthUser> getUsers() {
+		if (users == null)
+			return new ArrayList<AuthUser>();
 		return users;
 	}
 	public void setUsers(List<AuthUser> users) {
 		this.users = users;
 	}
 	public List<AuthMapping> getAuthMappings() {
+		if (authMappings == null)
+			return new ArrayList<AuthMapping>();
 		return authMappings;
 	}
 	public void setAuthMappings(List<AuthMapping> authMappings) {
@@ -93,6 +102,14 @@ public class Config {
 	public boolean checkAuthentication(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String url = request.getRequestURL().toString();
 		boolean matched = false;
+		
+		if (authMappingsByPattern == null){
+			authMappingsByPattern = new LinkedHashMap<Pattern, AuthMapping>();
+			for (AuthMapping cacheMapping : getAuthMappings()) {
+				authMappingsByPattern.put(Pattern.compile(cacheMapping.getPattern()), cacheMapping);
+			}
+		}
+
 
 		for (Pattern pattern : authMappingsByPattern.keySet()) {
 			if (pattern.matcher(url).matches()){
@@ -100,23 +117,30 @@ public class Config {
 
 				//Check if the user has sent credentials
 				String auth = request.getHeader("Authorization");
+				logger.finest("Authorization header: " + auth);
 
 				//Check if the user is valid
 				if (allowUser(auth, authMappingsByPattern.get(pattern))){
+					logger.finer("User is valid; allowing request to continue");
 					return true;
-				}
-				else {
-					if (isBasic())
-						response.setHeader("WWW-Authenticate", "BASIC realm=\"" + getRealm() + "\"");
-					else if (isDigest())
-						response.setHeader("WWW-Authenticate", "DIGEST realm=\"" + getRealm() + "\"");
-					response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-					return false;
 				}
 			}
 		}
 		//If no patterns matched the URL, we default to allowing the request.
-		return !matched;
+		if (matched){
+			logger.finest("The URL required authentication, but no valid user / groups were given.  Not allowing the request to proceed.");
+			logger.finer("User is not valid; returning code 403");
+			if (isBasic())
+				response.setHeader("WWW-Authenticate", "BASIC realm=\"" + getRealm() + "\"");
+			else if (isDigest())
+				response.setHeader("WWW-Authenticate", "DIGEST realm=\"" + getRealm() + "\"");
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			return false;
+		}
+		else{
+			logger.finest("The URL did not require authentication.");
+			return true;
+		}
 	}
 	
 	private boolean isBasic(){
@@ -130,14 +154,19 @@ public class Config {
 	// This method checks the user information sent in the Authorization
 	// header against the config file.
 	private boolean allowUser(String auth, AuthMapping authMapping) throws IOException {
-		if (auth == null) 
+		if (auth == null){ 
 			return false;
+		}
 
-		if (isBasic() && !auth.toUpperCase().startsWith("BASIC "))
+		if (isBasic() && !auth.toUpperCase().startsWith("BASIC ")){
+			logger.finest("Basic authentication format was not found in the header.");
 			return false;
+		}
 		
-		if (isDigest() && !auth.toUpperCase().startsWith("DIGEST "))
+		if (isDigest() && !auth.toUpperCase().startsWith("DIGEST ")){
+			logger.finest("Digest authentication format was not found in the header.");
 			return false;
+		}
 
 		String userPassDecoded = "";
 		if (isBasic()){
@@ -146,31 +175,45 @@ public class Config {
 			userPassDecoded = new String(new BASE64Decoder().decodeBuffer(userpassEncoded));
 		}
 		else if (isDigest()){
-			
+			//TODO
 		}
 
 		//Find if the username is value
-		AuthUser user = getUser(userPassDecoded.split(":")[0]);
-		if (user == null)
-			return false;
-		
-		//If the username is valid, check the password
-		if (isBasic()){
-			String[] split = userPassDecoded.split(":", 2);
-			if (split.length != 2)
+		AuthUser user = null;
+		String[] split = userPassDecoded.split(":", 2);
+		if (split.length > 1){
+			user = getUser(split[0]);
+			if (user == null){
+				logger.finest("No user found with name '" + user + "'");
 				return false;
-			String password = split[1];
-			if (!user.getPassword().equals(password))
-				return false;
-		}
-		else if (isDigest()){
-			
+			}
+
+			//If the username is valid, check the password
+			if (isBasic()){
+				if (split.length != 2){
+					logger.finest("No password was given in authorization header");
+					return false;
+				}
+				String password = split[1];
+				if (!user.getPassword().equals(password)){
+					logger.finest("User password was incorrect");
+					return false;
+				}
+			}
+			else if (isDigest()){
+
+			}
 		}
 		
 		//Check the groups - if the intersection of the user's groups and the allowed groups
 		// is greater than 0, then the user is allowed.
 		Set<String> groups = new HashSet<String>(authMapping.getAllowedGroups());
-		groups.retainAll(user.getGroups());		
+		groups.retainAll(user.getGroups());
+		
+		if (groups.size() == 0){
+			logger.finest("User is not in any required groups.");
+		}
+		
 		return groups.size() > 0;
 	}
 
@@ -180,13 +223,5 @@ public class Config {
 				return authUser;
 		}
 		return null;
-	}
-
-	private Object readResolve() {
-		authMappingsByPattern = new LinkedHashMap<Pattern, AuthMapping>();
-		for (AuthMapping cacheMapping : authMappings) {
-			authMappingsByPattern.put(Pattern.compile(cacheMapping.getPattern()), cacheMapping);
-		}
-		return this;
 	}
 }

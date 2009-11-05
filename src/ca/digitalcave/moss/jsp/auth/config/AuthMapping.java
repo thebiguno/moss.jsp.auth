@@ -11,7 +11,7 @@ import com.thoughtworks.xstream.annotations.XStreamImplicit;
 public class AuthMapping {
 	@XStreamAsAttribute
 	private String pattern;
-	@XStreamImplicit
+	@XStreamImplicit(itemFieldName="group")
 	private List<String> allowedGroups = new ArrayList<String>();
 
 	public String getPattern() {
@@ -21,6 +21,8 @@ public class AuthMapping {
 		this.pattern = pattern;
 	}
 	public List<String> getAllowedGroups() {
+		if (allowedGroups == null)
+			return new ArrayList<String>();
 		return allowedGroups;
 	}
 	public void setAllowedGroups(List<String> allowedGroups) {
