@@ -1,2 +1,5 @@
+1.0.0.1 - December 9 2009
+-Reload config after 60 seconds, to allow live auth.xml updates without server restarts 
+
 1.0.0.0 - November 4 2009
 -Initial stable version.  Basic auth is implemented, there are hooks for Digest but it is not working yet.  

@@ -2,6 +2,7 @@
 <auth log-level="FINEST" type="basic" realm="DC Photos">
   <auth-mapping pattern=".*jsp"></auth-mapping>
   <auth-mapping pattern=".*index\.jsp"><group>admin</group></auth-mapping>
+  <auth-mapping pattern=".*jpg"><group>foo</group></auth-mapping>
   
   <group name="users"/>
   <group name="admin"/>

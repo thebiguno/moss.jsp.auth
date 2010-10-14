@@ -30,11 +30,12 @@ import ca.digitalcave.moss.jsp.auth.config.ConfigFactory;
  */
 public class AuthFilter implements Filter {
 	
-	private Config config;
+	private FilterConfig filterConfig;
+	private Config config = null;
+	private long lastConfigLoad = 0;
 	
 	public void init(FilterConfig filterConfig) throws ServletException {
-		config = ConfigFactory.loadConfig(filterConfig);
-		LogUtil.setLogLevel(config.getLogLevel());
+		this.filterConfig = filterConfig;
 	}
 	
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
@@ -46,6 +47,12 @@ public class AuthFilter implements Filter {
 		
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
+
+		if (config == null || lastConfigLoad + 60000 < System.currentTimeMillis()){
+			config = ConfigFactory.loadConfig(filterConfig);
+			lastConfigLoad = System.currentTimeMillis();
+			LogUtil.setLogLevel(config.getLogLevel());
+		}
 		
 		//If this not authenticated, stop the request here.
 		if (!config.checkAuthentication(request, response)){
