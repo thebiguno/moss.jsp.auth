@@ -50,12 +50,14 @@ public class AuthFilter implements Filter {
 
 		if (config == null || lastConfigLoad + 60000 < System.currentTimeMillis()){
 			config = ConfigFactory.loadConfig(filterConfig);
-			lastConfigLoad = System.currentTimeMillis();
-			LogUtil.setLogLevel(config.getLogLevel());
+			if (config != null){
+				lastConfigLoad = System.currentTimeMillis();
+				LogUtil.setLogLevel(config.getLogLevel());
+			}
 		}
 		
 		//If this not authenticated, stop the request here.
-		if (!config.checkAuthentication(request, response)){
+		if (config != null && !config.checkAuthentication(request, response)){
 			return;
 		}
 		

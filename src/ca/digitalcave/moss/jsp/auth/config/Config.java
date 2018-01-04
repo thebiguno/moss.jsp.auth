@@ -3,10 +3,9 @@ package ca.digitalcave.moss.jsp.auth.config;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -24,7 +23,7 @@ public class Config {
 
 	private final static Logger logger = Logger.getLogger(Config.class.getName());
 	
-	private transient Map<Pattern, AuthMapping> authMappingsByPattern = null;
+	private transient ConcurrentHashMap<Pattern, AuthMapping> authMappingsByPattern = null;
 
 	@XStreamImplicit
 	private List<AuthMapping> authMappings = new ArrayList<AuthMapping>();
@@ -104,7 +103,7 @@ public class Config {
 		boolean matched = false;
 		
 		if (authMappingsByPattern == null){
-			authMappingsByPattern = new LinkedHashMap<Pattern, AuthMapping>();
+			authMappingsByPattern = new ConcurrentHashMap<Pattern, AuthMapping>();
 			for (AuthMapping cacheMapping : getAuthMappings()) {
 				authMappingsByPattern.put(Pattern.compile(cacheMapping.getPattern()), cacheMapping);
 			}
