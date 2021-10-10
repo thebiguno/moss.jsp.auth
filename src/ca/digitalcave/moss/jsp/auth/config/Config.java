@@ -2,6 +2,7 @@ package ca.digitalcave.moss.jsp.auth.config;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,8 +12,6 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import sun.misc.BASE64Decoder;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
@@ -171,7 +170,7 @@ public class Config {
 		if (isBasic()){
 			// Get encoded user and password, comes after "BASIC "
 			String userpassEncoded = auth.substring(6);
-			userPassDecoded = new String(new BASE64Decoder().decodeBuffer(userpassEncoded));
+			userPassDecoded = new String(Base64.getDecoder().decode(userpassEncoded));
 		}
 		else if (isDigest()){
 			//TODO
